@@ -12,7 +12,7 @@ const PRESETS: Preset[] = [
 	{ name: "Short Break", minutes: 5, color: "#3b82f6" },
 	{ name: "Long Break", minutes: 15, color: "#8b5cf6" },
 	{ name: "Custom 10", minutes: 10, color: "#10b981" },
-	{ name: "Custom 20", minutes: 20, color: "#f59e0b" },
+	
 ];
 
 function App() {
