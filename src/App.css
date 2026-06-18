@@ -362,6 +362,213 @@ header h1 {
   color: var(--text-muted-dark);
 }
 
+/* Custom Preset Input */
+.custom-preset-input {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.custom-preset-input label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted-light);
+  white-space: nowrap;
+}
+
+.dark .custom-preset-input label {
+  color: var(--text-muted-dark);
+}
+
+.custom-preset-input input {
+  width: 80px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--border-light);
+  background: var(--card-light);
+  color: var(--text-light);
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.custom-preset-input input::-webkit-outer-spin-button,
+.custom-preset-input input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.dark .custom-preset-input input {
+  border-color: var(--border-dark);
+  background: var(--card-dark);
+  color: var(--text-dark);
+}
+
+.custom-preset-input input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* Music Controls */
+.music-controls {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 2px solid var(--border-light);
+}
+
+.dark .music-controls {
+  border-top-color: var(--border-dark);
+}
+
+.music-controls-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  justify-content: center;
+}
+
+.music-icon {
+  font-size: 1.1rem;
+}
+
+.music-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted-light);
+}
+
+.dark .music-label {
+  color: var(--text-muted-dark);
+}
+
+.music-controls-body {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.music-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border: 2px solid var(--border-light);
+  background: transparent;
+  color: var(--text-light);
+  border-radius: 2rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+  transition: all 0.3s;
+}
+
+.dark .music-btn {
+  border-color: var(--border-dark);
+  color: var(--text-dark);
+}
+
+.music-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.music-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.music-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.music-btn.active {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  max-width: 220px;
+}
+
+.volume-control label {
+  display: flex;
+  align-items: center;
+  color: var(--text-muted-light);
+}
+
+.dark .volume-control label {
+  color: var(--text-muted-dark);
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--border-light);
+  outline: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dark .volume-slider {
+  background: var(--border-dark);
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #10b981;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: #10b981;
+  cursor: pointer;
+}
+
+.volume-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted-light);
+  min-width: 35px;
+  text-align: right;
+}
+
+.dark .volume-value {
+  color: var(--text-muted-dark);
+}
+
 /* Controls */
 .controls {
   display: flex;

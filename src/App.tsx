@@ -25,15 +25,29 @@ const MUSIC_FILES: string[] = [
 	// "music/track-3.mp3",
 ];
 
+interface TimerState {
+	timeLeft: number;
+	isRunning: boolean;
+	sessionTotal: number;
+}
+
 function App() {
 	const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 	const [selectedPreset, setSelectedPreset] = useState<number>(0);
-	const [timeLeft, setTimeLeft] = useState<number>(
-		BUILT_IN_PRESETS[0].minutes * 60,
-	);
-	const [isRunning, setIsRunning] = useState<boolean>(false);
 	const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
-	const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+	const [timers, setTimers] = useState<Record<number, TimerState>>(() => {
+		const initial: Record<number, TimerState> = {};
+		BUILT_IN_PRESETS.forEach((p, i) => {
+			const total = p.minutes * 60;
+			initial[i] = {
+				timeLeft: total,
+				isRunning: false,
+				sessionTotal: total,
+			};
+		});
+		return initial;
+	});
 
 	// ---- Custom Preset ----
 	const [customMinutes, setCustomMinutes] = useState<number>(30);
@@ -53,9 +67,21 @@ function App() {
 	// Adjust selectedPreset if the list shrinks
 	const safePresetIndex = Math.min(selectedPreset, allPresets.length - 1);
 
+	// Ensure a timer exists for the currently selected preset (e.g. custom)
+	const activeTimer =
+		timers[safePresetIndex] ??
+		(() => {
+			const total = allPresets[safePresetIndex]?.minutes * 60;
+			return { timeLeft: total, isRunning: false, sessionTotal: total };
+		})();
+	const isAnyRunning = Object.values(timers).some(
+		(t) => t.isRunning && t.timeLeft > 0,
+	);
+
 	// ---- Music System ----
 	const audioRef = useRef<HTMLAudioElement | null>(null);
 	const volumeRef = useRef<number>(0.4);
+	const musicStartedRef = useRef<boolean>(false);
 	const [musicEnabled, setMusicEnabled] = useState<boolean>(false);
 	const [musicVolume, setMusicVolume] = useState<number>(0.4);
 
@@ -92,19 +118,21 @@ function App() {
 		}
 	}, []);
 
-	// Sync music with timer
+	// Sync music with timer (plays when ANY preset is running)
 	useEffect(() => {
-		if (musicEnabled && isRunning && timeLeft > 0) {
-			startMusic();
-		} else if (!isRunning || timeLeft === 0) {
-			pauseMusic();
-		}
+		const anyRunning = Object.values(timers).some(
+			(t) => t.isRunning && t.timeLeft > 0,
+		);
+		const shouldPlay = musicEnabled && anyRunning;
 
-		// Stop entirely when timer finishes
-		if (timeLeft === 0 && musicEnabled) {
+		if (shouldPlay && !musicStartedRef.current) {
+			musicStartedRef.current = true;
+			startMusic();
+		} else if (!shouldPlay && musicStartedRef.current) {
+			musicStartedRef.current = false;
 			stopMusic();
 		}
-	}, [musicEnabled, isRunning, timeLeft, startMusic, pauseMusic, stopMusic]);
+	}, [musicEnabled, timers, startMusic, pauseMusic, stopMusic]);
 
 	// Clean up on unmount
 	useEffect(() => {
@@ -121,37 +149,78 @@ function App() {
 		}
 	}, [musicVolume]);
 
-	// ---- Timer Logic ----
+	// ---- Timer Logic (ticks all running presets) ----
 	useEffect(() => {
-		if (isRunning && timeLeft > 0) {
-			intervalRef.current = setInterval(() => {
-				setTimeLeft((prev) => prev - 1);
-			}, 1000);
-		}
+		const intervalId = setInterval(() => {
+			setTimers((prev) => {
+				const hasRunning = Object.values(prev).some(
+					(t) => t.isRunning && t.timeLeft > 0,
+				);
+				if (!hasRunning) return prev;
 
-		return () => {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current);
-			}
-		};
-	}, [isRunning, timeLeft]);
+				const next: Record<number, TimerState> = {};
+				for (const [key, t] of Object.entries(prev)) {
+					const k = Number(key);
+					if (t.isRunning && t.timeLeft > 0) {
+						const newTimeLeft = t.timeLeft - 1;
+						next[k] = {
+							timeLeft: newTimeLeft,
+							isRunning: newTimeLeft > 0,
+							sessionTotal: t.sessionTotal,
+						};
+					} else {
+						next[k] = t;
+					}
+				}
+				return next;
+			});
+		}, 1000);
+
+		return () => clearInterval(intervalId);
+	}, []);
 
 	const handlePresetChange = (index: number): void => {
-		if (isRunning) {
-			// Stop timer
-			setIsRunning(false);
-		}
 		setSelectedPreset(index);
-		setTimeLeft(allPresets[index].minutes * 60);
+		// Ensure a timer entry exists for this preset without overwriting any existing one
+		setTimers((prev) => {
+			if (prev[index]) return prev;
+			const total = allPresets[index].minutes * 60;
+			return {
+				...prev,
+				[index]: { timeLeft: total, isRunning: false, sessionTotal: total },
+			};
+		});
 	};
 
 	const toggleTimer = (): void => {
-		setIsRunning((prev) => !prev);
+		setTimers((prev) => {
+			const current = prev[safePresetIndex];
+			if (!current) return prev;
+			const wasRunning = current.isRunning;
+			return {
+				...prev,
+				[safePresetIndex]: {
+					...current,
+					isRunning: !wasRunning,
+					// Lock in session total when starting
+					sessionTotal: wasRunning
+						? current.sessionTotal
+						: current.timeLeft,
+				},
+			};
+		});
 	};
 
 	const resetTimer = (): void => {
-		setIsRunning(false);
-		setTimeLeft(allPresets[safePresetIndex].minutes * 60);
+		const total = allPresets[safePresetIndex].minutes * 60;
+		setTimers((prev) => ({
+			...prev,
+			[safePresetIndex]: {
+				timeLeft: total,
+				isRunning: false,
+				sessionTotal: total,
+			},
+		}));
 	};
 
 	const toggleMusic = (): void => {
@@ -168,7 +237,7 @@ function App() {
 	};
 
 	const progress: number =
-		(timeLeft / (allPresets[safePresetIndex].minutes * 60)) * 100;
+		(activeTimer.timeLeft / activeTimer.sessionTotal) * 100;
 	const currentPreset: Preset = allPresets[safePresetIndex];
 
 	return (
@@ -191,7 +260,7 @@ function App() {
 						<circle cx="12" cy="12" r="10" />
 						<polyline points="12 6 12 12 16 14" />
 					</svg>
-					{isRunning && <span className="fab-indicator" />}
+					{isAnyRunning && <span className="fab-indicator" />}
 				</button>
 
 				{/* Dialog Overlay */}
@@ -311,7 +380,7 @@ function App() {
 									</svg>
 									<div className="timer-content">
 										<div className="time-display">
-											{formatTime(timeLeft)}
+											{formatTime(activeTimer.timeLeft)}
 										</div>
 										<div className="timer-label">
 											{currentPreset.name}
@@ -330,7 +399,7 @@ function App() {
 											} as React.CSSProperties
 										}
 									>
-										{isRunning ? (
+										{activeTimer.isRunning ? (
 											<>
 												<svg
 													width="24"
@@ -398,7 +467,6 @@ function App() {
 										<button
 											className={`music-btn ${musicEnabled ? "active" : ""}`}
 											onClick={toggleMusic}
-											disabled={!isRunning && timeLeft > 0}
 											title={
 												musicEnabled ? "Stop music" : "Start music"
 											}
